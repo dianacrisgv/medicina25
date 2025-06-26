@@ -3,25 +3,27 @@
 import matplotlib.pyplot as plt
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, ConfusionMatrixDisplay, classification_report, roc_curve, auc
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay, roc_curve, auc, accuracy_score, precision_score, recall_score, f1_score
+
 import joblib
 import pandas as pd
 import os
+from sklearn.impute import SimpleImputer
 
-def train_svm_model(df, target='target_bin'):
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    # Definir columnas a eliminar dinámicamente
-    drop_candidates = [target, 'Enfermedad_gran_volumen', 'Documento','Genero', 'Fecha Nacimiento','Edad','DXprincipal', 'Des_Dx','Anoscopia', 'Sifilis', 'proctitis', 'Genotipos' ]
 
-    cols_to_drop = [col for col in drop_candidates if col in df.columns]
+def train_svm_model(df_clean):
+    
+    #Preparación de datos 
+    X = df_clean.select_dtypes(include=['number', 'bool']).drop(columns=['Enfermedad_gran_volumen'])
+    y = df_clean['Enfermedad_gran_volumen'].astype(int)  # Asegurar que la variable objetivo sea numérica
 
-    features = df.drop(columns=cols_to_drop).columns.tolist()
-    X = df[features]
-    X = pd.get_dummies(X, drop_first=True)  # Convierte texto a variables dummy
-    y = df[target]
 
     # División del conjunto
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state = 30)
+
+    imputer = SimpleImputer(strategy='mean')
+    X_train = imputer.fit_transform(X_train)
+    X_test = imputer.transform(X_test)
 
     # Modelo SVM con kernel RBF (no lineal)
     model = SVC(kernel='rbf', probability=True, class_weight='balanced')
@@ -40,6 +42,45 @@ def train_svm_model(df, target='target_bin'):
     print('\nClassification Report:')
     print(classification_report(y_test, y_pred))
 
+
+    # -------------------------------
+    # MÉTRICAS DE CLASIFICACIÓN
+    # -------------------------------
+
+    # Reporte de métricas
+    print('\nReporte de Clasificación:')
+    print(classification_report(y_test, y_pred))
+
+    # Cálculo de métricas
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+
+    # Mostrar métricas
+    print("\nMétricas del modelo DC:")
+    print(f"Accuracy:  {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall:    {recall:.4f}")
+    print(f"F1-score:  {f1:.4f}")
+
+    # Guardar métricas
+    metricas_svm = pd.DataFrame({
+        'accuracy': [accuracy],
+        'precision': [precision],
+        'recall': [recall],
+        'f1_score': [f1]
+    })
+    metricas_svm.to_csv('./models/metricas_svm.csv', index=False)
+
+    metrics = {
+        'modelo': 'SVM',
+        'accuracy': accuracy_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred),
+        'f1_score': f1_score(y_test, y_pred)
+    }
+
     # Matriz de Confusión
     cm = confusion_matrix(y_test, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
@@ -47,7 +88,7 @@ def train_svm_model(df, target='target_bin'):
     plt.title('Matriz de Confusión - SVM')
     plt.grid(False)
     plt.tight_layout()
-    plt.savefig('./models/conf_matrix_svm.png')
+    plt.savefig('./models/conf_matrix_svm.png', dpi=300)
     #plt.close()
     plt.show()
 
@@ -63,6 +104,7 @@ def train_svm_model(df, target='target_bin'):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig('./models/roc_svm.png', dpi=300)
     plt.show()
 
     # 🔽 Exportar curva ROC y AUC
@@ -71,3 +113,5 @@ def train_svm_model(df, target='target_bin'):
 
     with open('./models/roc_svm_auc.txt', 'w') as f:
         f.write(f'AUC: {roc_auc:.4f}')
+
+    return model, metrics

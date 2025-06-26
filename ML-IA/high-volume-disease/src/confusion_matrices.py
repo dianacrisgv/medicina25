@@ -10,13 +10,12 @@ def show_and_save_confusion_matrices(output_path='./models/matrices_combinadas.p
         'Random Forest': './models/conf_matrix_rf.png' 
         
     }
-    # 'XGBoost': './models/conf_matrix_xgboost.png'
+    
+    #fig, axes = plt.subplots(1, len(models), figsize=(6 * len(models), 6))
+    fig, axes = plt.subplots(2, 2, figsize=(3 * len(models), 8))
 
-    fig, axes = plt.subplots(1, len(models), figsize=(6 * len(models), 6))
-
-    # Asegura que axes sea una lista aunque haya solo una imagen
-    if len(models) == 1:
-        axes = [axes]
+    axes = axes.ravel()
+    axes = axes.flatten()  # ✅ Aplanar la matriz de subplots
 
     for ax, (name, path) in zip(axes, models.items()):
         if os.path.exists(path):
@@ -29,6 +28,6 @@ def show_and_save_confusion_matrices(output_path='./models/matrices_combinadas.p
             print(f'❌ Imagen no encontrada: {path}')
 
     plt.tight_layout()
-    plt.savefig(output_path)
+    plt.savefig(output_path, dpi=300)
     plt.show()
     print(f'✅ Imagen combinada guardada en: {output_path}')
