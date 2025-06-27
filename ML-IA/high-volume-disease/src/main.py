@@ -5,7 +5,7 @@ import pandas as pd
 from preprocess import clean_data
 import matplotlib.pyplot as plt
 import numpy as np
-#import seaborn as sns
+import seaborn as sns
 
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
@@ -62,7 +62,7 @@ df_clean['target_bin'] = df_clean['Enfermedad_gran_volumen'].apply(lambda x: 0 i
 df_clean.to_csv('./data/gran_volumen_clean.csv', index=False)
 
 #Análisis Exploratorio de Datos (EDA)
-"""
+
 # Distribución de clases
 sns.countplot(data=df_clean, x='Enfermedad_gran_volumen', palette='pastel')
 plt.title('Distribución de la Enfermedad de Gran Volumen')
@@ -119,7 +119,7 @@ plt.yticks(fontsize=6)
 plt.tight_layout()
 plt.savefig('./images/mapadecorrelacion.png', dpi=300)
 #plt.show()
-"""
+
 
 #Preparación de datos para el modelado 
 X = df_clean.select_dtypes(include=['number', 'bool']).drop(columns=['Enfermedad_gran_volumen'])
